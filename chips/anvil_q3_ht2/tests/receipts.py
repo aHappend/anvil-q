@@ -5,6 +5,7 @@ import json
 import math
 import os
 import shutil
+import signal
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
@@ -82,6 +83,29 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
     if (run / "repair-of.json").is_file():
         receipt["repair_of"] = json.loads((run / "repair-of.json").read_text())
     started = time.monotonic()
+    process = None
+    previous_sigterm = signal.getsignal(signal.SIGTERM)
+
+    def interrupted(signum, frame):
+        receipt["interrupted_by_signal"] = signum
+        raise RuntimeError(f"tool execution interrupted by signal {signum}")
+
+    def stop_group():
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.wait()
+
+    signal.signal(signal.SIGTERM, interrupted)
     for filename in ("stdout.txt", "stderr.txt", "version.stdout.txt",
                      "version.stderr.txt"):
         (location / filename).touch(exist_ok=False)
@@ -121,7 +145,8 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
         remaining()
         with (location / "stdout.txt").open("wb") as stdout, (
                 location / "stderr.txt").open("wb") as stderr:
-            process = subprocess.Popen(argv, cwd=cwd, stdout=stdout, stderr=stderr)
+            process = subprocess.Popen(argv, cwd=cwd, stdout=stdout, stderr=stderr,
+                                       start_new_session=True)
             receipt["execution_started"] = True
             while True:
                 left = child_deadline - time.monotonic()
@@ -136,12 +161,7 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
                               f"({int(time.monotonic() - started)}s)", flush=True)
                         continue
                     receipt["timed_out"] = True
-                    process.terminate()
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait()
+                    stop_group()
                     exit_code = process.returncode
                     break
         receipt["exit_code"] = exit_code
@@ -156,8 +176,12 @@ def execute(run, name, argv, version_argv, *, cwd=None, expect=0):
         raise RuntimeError(f"{name}: {error}; "
                            f"see {location.relative_to(ROOT)}/receipt.json") from error
     finally:
+        if process is not None:
+            stop_group()
+            receipt["exit_code"] = process.returncode
         receipt.update(finished_at=utc(), duration_s=time.monotonic() - started)
         (location / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+        signal.signal(signal.SIGTERM, previous_sigterm)
     return location
 
 

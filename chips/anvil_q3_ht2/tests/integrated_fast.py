@@ -65,7 +65,7 @@ def run_fast_integration(run, mode, seed=17, diagnostic=False):
     }
     executable = compile_verilator(run, "integrated-clock-driver-compile", [
         "verilator", "--cc", "--exe", "--build", "-Wno-fatal",
-        "--inline-mult", "0",
+        "--inline-mult", "1",
         "--top-module", "anvil_q3_ht2_top", "--prefix", "Vintegrated",
         "--Mdir", relative(obj), "-j", "2",
         "--output-split", "20000", "--output-split-cfuncs", "2000",

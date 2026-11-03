@@ -11,15 +11,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from compatibility import run_compatibility
 from integrated_fast import run_fast_integration
 from performance import run_performance
-from receipts import ROOT, execute, new_run, relative
+from receipts import ROOT, execute, new_run, relative, utc
 from synthesis import run_synthesis
 from verify import Ledger, clean_reproduction, enter_tier
 
 
 FAILED_RECEIPT = (
-    "evidence/l1-all-20261103T020939196358Z/"
-    "synthesis-anvil_q3_ht2_tree_attention-mode1-1793673932774341279/"
-    "synthesis-anvil_q3_ht2_tree_attention-20261103T024532808172Z/receipt.json"
+    "evidence/preparation/delivery-producers-20261103T024849232660Z/"
+    "changed-producers-20261103T024849279956Z/receipt.json"
 )
 
 
@@ -29,15 +28,15 @@ def worker(run):
         for mode in (1, 2):
             ledger.check(f"read-only-attention-synthesis-mode{mode}", run_synthesis,
                          "anvil_q3_ht2_tree_attention", mode)
+            ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
         integrated = ledger.check("integrated-mode1-seed17", run_fast_integration, 1, 17)
         ledger.check("performance", run_performance, integrated)
-        for mode in (1, 2):
-            ledger.check(f"compatibility-mode{mode}", run_compatibility, mode)
         ledger.check("integrated-mode2-seed29", run_fast_integration, 2, 29)
         ledger.check("clean-reproduction", clean_reproduction)
         ledger.finish()
     except Exception as error:
-        ledger.data.update(status="failed", error=f"{type(error).__name__}: {error}")
+        ledger.data.update(status="failed", finished_at=utc(),
+                           error=f"{type(error).__name__}: {error}")
         ledger.save()
         raise
 
@@ -45,6 +44,7 @@ def worker(run):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--_worker-run", help=argparse.SUPPRESS)
+    parser.add_argument("--repair-of", default=FAILED_RECEIPT)
     args = parser.parse_args()
     enter_tier()
     if args._worker_run:
@@ -53,7 +53,7 @@ def main():
             parser.error("worker run must be a preparation directory")
         worker(run)
     else:
-        run = new_run("delivery-producers", preparation=True, repair_of=FAILED_RECEIPT)
+        run = new_run("delivery-producers", preparation=True, repair_of=args.repair_of)
         print(f"Preparation evidence: {relative(run)}", flush=True)
         result = execute(run, "changed-producers", [
             sys.executable, "tests/delivery_probe.py", "--_worker-run", relative(run)],
