@@ -111,12 +111,12 @@ module anvil_q2_ht2_vector_unit #(
         operands[index]<=d_data;
         auxiliaries[index]<=d_aux;
       end
-      if (stream_read || statistics_read)
-        operand_q<=operands[statistics_read ? statistics_issued : stream_issued];
       if (stream_read) begin
+        operand_q<=operands[stream_issued];
         auxiliary_q<=auxiliaries[stream_issued];
         exponential_q<=exponentials[stream_issued];
       end
+      if (statistics_read) operand_q<=operands[statistics_issued];
       if (work_write) exponentials[exponential_index]<=softmax_exponential;
       if (statistics_capture)
         for (partial_index=0;partial_index<16;partial_index=partial_index+1)
