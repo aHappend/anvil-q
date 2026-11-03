@@ -192,6 +192,19 @@ def run_delivery_checker(run):
         else:
             raise AssertionError("expired check created another child/output")
     from concurrent.futures import ThreadPoolExecutor
+    component_method = budget.Run.component
+    parent = SimpleNamespace(path=run.path, hashes={}, tool_versions={}, components=[])
+    child = SimpleNamespace(path=run.path / "checker-only-child", hashes={},
+                            finish=lambda *args, **kwargs: "failed")
+    with patch.object(budget, "Run", return_value=child):
+        try:
+            component_method(parent, "checker-only-child", lambda child: {})
+        except budget.BudgetExceeded:
+            pass
+        else:
+            raise AssertionError("deadline-failed child was reported as a passing component")
+    if parent.components[0]["status"] != "failed":
+        raise AssertionError("component status disagrees with child retention status")
     worker = budget.Run.__new__(budget.Run)
     worker.commands = []
     with patch.object(budget.BaseRun, "execute", return_value="thread-clock-checked"), \
@@ -248,4 +261,4 @@ def run_delivery_checker(run):
             "compact_profile1_applicability": applicable,
             "compact_profile1_counts": {
                 name: result[name] for name in ("extra_cycles", "compact_diagnostic", "profile")},
-            "rejected_counterexamples": rejected, "cumulative_budget_properties": 5}
+            "rejected_counterexamples": rejected, "cumulative_budget_properties": 6}

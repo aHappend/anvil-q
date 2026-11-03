@@ -54,6 +54,26 @@ class Run(BaseRun):
         super().__init__(*args, **kwargs)
         self.monotonic_start = START
 
+    def component(self, stem, operation):
+        child = Run(stem, preparation="preparation" in self.path.parts)
+        child.tool_versions = getattr(self, "tool_versions", {})
+        try:
+            if child.hashes != self.hashes:
+                raise RuntimeError("sources changed during an active verification suite")
+            results = operation(child)
+            status = child.finish("passed", results)
+        except Exception as error:
+            if not (child.path / "receipt.json").exists():
+                child.finish("failed", error=f"{type(error).__name__}: {error}")
+            self.components.append({"receipt": execution.relative(child.path / "receipt.json"),
+                                    "status": "failed"})
+            raise
+        self.components.append({"receipt": execution.relative(child.path / "receipt.json"),
+                                "status": status})
+        if status != "passed":
+            raise BudgetExceeded(f"component {stem} exceeded the whole-check budget")
+        return results
+
     def execute(self, argv, name, timeout=2700, **kwargs):
         allowance = remaining()
         if allowance <= 0:
@@ -93,7 +113,3 @@ class Run(BaseRun):
             signal.setitimer(signal.ITIMER_REAL, 0)
             if timer[0]:
                 signal.setitimer(signal.ITIMER_REAL, max(0.001, remaining()))
-
-
-# BaseRun.component resolves its child class in execution's module namespace.
-execution.Run = Run
