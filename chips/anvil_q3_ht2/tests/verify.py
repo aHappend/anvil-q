@@ -249,7 +249,9 @@ def all_checks(ledger):
                           ("mode", "seed", "record_sha256"))
     for name, function in (("broadcast", run_tile), ("rounding", run_arithmetic),
                            ("sparse", run_sparse)):
-        control = ledger.check(f"control-{name}", function, "verilator", 17, True)
+        prior_control = {"broadcast": "tile-seed17", "sparse": "sparse-seed17"}.get(name)
+        control = (controls[prior_control] if prior_control else
+                   ledger.check(f"control-{name}", function, "verilator", 17, True))
         mutant = ledger.check(f"mutation-{name}", function, "verilator", 17, True,
                               mutant=True)
         bind_mutation_control(ledger, control, mutant,
