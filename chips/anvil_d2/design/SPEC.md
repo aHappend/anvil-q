@@ -284,6 +284,91 @@ projection 2 embedding RMS gain. Native decoder tensor roles and remaining
 head parameter projections must be finalized without live-address overlap
 before integration. Shared embeddings/output retain parent identities.
 
+### MTP input projection implementation boundary
+
+`anvil_d2_mtp_projection` implements the native head's input operation,
+not the subsequent transformer or the complete MTP engine. On its command
+handshake capture head 0..3, previous token and absolute candidate position;
+then accept exactly HIDDEN_SIZE previous-hidden Q16.16 components. Read
+the selected token's shared embedding through kind 0, layer/projection 0,
+row token, col component. Independently RMS-normalize hidden and embedding
+using the unchanged parent numerical primitives and epsilon.
+
+Head weights are kind 12, layer NUM_LAYERS+head: projection 1/2, row 0,
+col component for hidden/embedding gains; projection 0, row output
+component, col input component for H by 2H concatenation projection.
+Concatenation order is hidden first, embedding second. There is no bias.
+Wide accumulation and the Q16.16 projection rounding follow the unchanged
+parent tensor arithmetic. This realizes independently programmed gains
+and projection for all four heads without rewriting the parent.
+
+The previous-hidden vector, 2H normalized concatenation, and H projected
+output use separate synchronous RAMs (4H signed32 words total). No
+intermediate vector spills to external memory. An internal ready/valid
+memory adapter acknowledges each registered RAM read/write after its
+request edge; only shared embedding and actual head-weight reads reach
+the external client. Output is an H-component held stream, not a token
+lookup or externally supplied prediction.
+
+| Projection state / edge | Effect |
+|---|---|
+| IDLE command handshake | Capture head/token/position; explicit failed completion for illegal fields |
+| FILL input handshake | Store one previous-hidden component; no transfer outside this phase |
+| HIDDEN_NORM / WAIT | Execute parent RMSNorm using hidden RAM and head projection-1 gains |
+| EMBEDDING_NORM / WAIT | Read shared embedding; execute RMSNorm with projection-2 gains |
+| Local memory request handshake | Synchronous RAM access; registered response is visible only after the edge |
+| Local response stall | Hold data/status; do not admit another internal request |
+| PROJECT / WAIT | Parent tensor computes H rows over 2H normalized inputs |
+| OUT_READ / OUT_PUBLISH | Synchronous output-RAM read, followed by stable held component |
+| Final component handshake | Enter separate one-cycle COMPLETE |
+| Child memory/arithmetic failure | Flush children, annul unpublished output, failed COMPLETE then FAULTED |
+| Reset/flush | Annul local response and RAM ownership; no bulk RAM clearing |
+| First release edge | Arm only; no pre-edge transfer |
+| Minimum H=8, any legal non-power-of-two H | Explicit final-component tests, no power-of-two wrap assumptions |
+
+Reset zeros public handshakes/data and arming; flush/reset is required to
+leave FAULTED. Head-specific transformer, residual/MLA/FFN and final shared
+output projection remain separate integration obligations. This component
+does not establish four native draft heads or causal verification by itself.
+
+### MTP verdict/publication implementation boundary
+
+`anvil_d2_mtp_verdict` is an internal consumer of actual engine results.
+It is not a substitute for the required draft/target datapaths. A command
+captures anchor b, up to four draft/verification pairs, first output
+position, maximum visible count 1..5, and EOS. Packed pairs are depth-first
+with depth 0 in bits 31:0. Proposed count 0 is the sequential anchor-only
+case; counts 1..4 support bounded MTP tails.
+
+Compute the longest matching prefix, never independent accepted-token
+bits. On mismatch emit anchor, the matching draft prefix, and the first
+target correction; on all-accept emit anchor and every proposed draft.
+First shorten for caller limit/sequence capacity, then first EOS.
+Visible accepted count is min(matching prefix, visible count minus one).
+Neither later matches nor terminally discarded drafts become accepted
+retirements. `accepted_retire` identifies only an actual handshake of
+an accepted-draft beat; `rejected_block` is one cycle at verdict capture
+for an actual mismatch, not an output-retirement count.
+
+| Verdict state / edge | Effect |
+|---|---|
+| IDLE command handshake | Register all engine results and command fields; no public output |
+| DECIDE edge | Register selected tokens, terminal-truncated count, accepted prefix and rejection |
+| VERDICT edge | Enter distinct registered PUBLISH state; publication was still inactive before the edge |
+| PUBLISH stall | Hold token, position, last/count/accepted and beat provenance |
+| PUBLISH handshake | Retire exactly one beat; advance index/absolute position only after the edge |
+| Final beat handshake | Enter PUBLICATION_COMPLETE; no same-edge done |
+| PUBLICATION_COMPLETE | One-cycle block-publication done, not public command completion |
+| Invalid command | Explicit failed publication completion, no output, then FAULTED |
+| Flush/reset | Annul unpublished beats and completion; reset requires one arming edge |
+| Count 0 proposals / visible limit 1 / EOS anchor | Single anchor beat, accepted 0, last 1 |
+| First position at sequence end | Shorten to one beat; first position outside the sequence fails |
+
+`publication_done` does not certify target materialization, write
+acknowledgements or command completion. The future engine/controller must
+drain/materialize the final emitted token before the public COMPLETE.
+No top-level engine-result input is authorized by this internal component.
+
 Use bounded queues, tagged bank arbitration and explicit owner/epoch
 tracking. Associate responses by tag, never arrival order. Unknown,
 duplicate and wrong-epoch responses cannot update live transactions.
@@ -340,6 +425,68 @@ it is 132/256, not half. Required >=2x reductions against actual D1 apply
 SEPARATELY to matched, nontrivial latent and routed-expert workloads,
 including scales, padding, retries and refetches. Do not claim this for
 singleton tails. Logical transfer bytes are not measured DDR4 bus traffic.
+
+### FP8 group service implementation boundary
+
+`anvil_d2_fp8_mla_moe` is a serialized group service shared by latent-cache
+and routed-expert consumers. This internal interface does not alter the
+fixed public top. A command specifies epoch, layer, row, aligned logical
+base column, actual count 1..128, read/write, expert/cache and prefetch.
+Projection is 3 for cache, 5 for expert. A read returns signed Q16.16,
+binary32 and BF16 per element; consumers must use the Q16.16 result for
+the specified hybrid MAC boundary. Read-prefetch loads the same resident
+buffer but produces no element stream. Expert writes and write-prefetch
+are explicitly invalid. The integration adapter, not this group service,
+determines actual tensor-row lengths and excludes non-latent RoPE and
+non-routed/bias expert tensors.
+
+There are two independent resident ownership records, one per consumer
+class, each containing epoch, layer, row, base column and actual count.
+A miss invalidates the selected record before memory issue, fetches the
+scale plus all packed words, validates/dequantizes every actual element
+and only then marks the group resident. A different epoch invalidates both
+records. A matching read may replay the decoded group without refetch.
+The numerical RAM is 256 x 80 bits (FP32, BF16, Q16.16), not model-sized
+storage. A shared 32-word packed staging RAM supports miss decoding and
+cache quantization. No bulk RAM clearing or asynchronous read is needed.
+
+Cache writes capture exactly the actual group through the quantizer,
+pack low-component-first bytes, and write all payload words followed by
+the scale, waiting for every acknowledgement. The command completes
+only after the scale acknowledgement. The selected resident record stays
+invalid; a later read observes the stored quantized values, not the
+unquantized input. Atomicity here means ownership/publication: no other
+group command is admitted during the write. A cancelled partial write
+must never be used as live context; top-level epoch/sequence validity and
+scheduler drain enforce that boundary. Physical external words are not
+transactionally rolled back.
+
+| Group service state / edge | Effect |
+|---|---|
+| IDLE command handshake | Capture full identity/count; reject invalid command through failed completion |
+| Read hit | Synchronous numerical-RAM read, then held element publication |
+| Read miss scale/payload request | Held request, wait for registered scheduler response before consuming |
+| DECODE_READ / DECODE_ISSUE | Synchronous packed-RAM read, select actual byte, enter four-stage dequant |
+| DECODE_WAIT / CONVERT / STORE | Capture FP32/BF16; registered ties-away Q16 conversion; store all three forms |
+| Last successful STORE | Make full ownership record valid; prefetch completes or normal read replays |
+| QUANTIZE_CAPTURE | Accept exactly count signed-Q16 elements; exclude unwritten tails |
+| QUANTIZE_PACK | Pack actual quantizer outputs; final word's unfilled bytes are zero |
+| WRITE_PAYLOAD / WRITE_SCALE | Wait for every accepted request's acknowledgement; scale is last |
+| OUT_PUBLISH stall | Hold index/last and all numerical forms, without advancing |
+| Final element retirement | Enter separate COMPLETE, never a same-edge done |
+| Any memory/numerical error | Invalidate both records, flush arithmetic, failed COMPLETE then FAULTED |
+| Flush at any stage | Annul publication and both owners; integration flushes/drains scheduler concurrently |
+| First release edge | Arm only; no command/source/output/memory handshake |
+| Count 1 or 127 | One or 32 packed words respectively; only actual elements decode |
+| Simultaneous RAM read/write | States exclude same-array concurrent operations; no collision-mode dependency |
+
+`fault` remains set after failed completion until flush/reset. `done/error`
+are one-cycle command completion signals. Memory responses belong to the
+single outstanding internal service request; external tag validation is
+the scheduler's responsibility. Actual byte counters must be driven from
+external bank handshakes, not these earlier queue-admission handshakes.
+The service is implemented independently of the still-required native
+decoder adapter; its presence alone is not integrated FP8 inference.
 
 ## Implementation and independent acceptance obligations
 
